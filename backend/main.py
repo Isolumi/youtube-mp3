@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import time
+from urllib.parse import urlparse, parse_qs, urlunparse
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -112,6 +113,7 @@ def process_download(job_id: str, url: str):
 
         ydl_opts = {
             "format": "bestaudio/best",
+            "noplaylist": True,  # Prevent downloading entire playlists
             "postprocessors": [
                 {
                     "key": "FFmpegExtractAudio",
@@ -123,7 +125,7 @@ def process_download(job_id: str, url: str):
             "progress_hooks": [progress_hook],
             "quiet": True,
             "no_warnings": True,
-            "noprogress": True,  # Suppress yt-dlp's own progress bar
+            "noprogress": True,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -168,6 +170,36 @@ def process_download(job_id: str, url: str):
             del url_to_job_id[url]
 
 
+def sanitize_youtube_url(url: str) -> str:
+    """
+    Extracts the clean video URL, removing playlist/radio parameters.
+    Handles watch?v=, shorts/, and youtu.be/ formats.
+    """
+    try:
+        parsed = urlparse(url)
+        # Handle youtu.be/VIDEO_ID
+        if parsed.netloc == 'youtu.be':
+            return f"https://www.youtube.com/watch?v={parsed.path.lstrip('/')}"
+        
+        # Handle youtube.com/shorts/VIDEO_ID
+        if '/shorts/' in parsed.path:
+            video_id = parsed.path.split('/shorts/')[1].split('?')[0]
+            return f"https://www.youtube.com/watch?v={video_id}"
+            
+        # Handle youtube.com/watch?v=VIDEO_ID
+        if 'watch' in parsed.path:
+            query = parse_qs(parsed.query)
+            if 'v' in query:
+                video_id = query['v'][0]
+                return f"https://www.youtube.com/watch?v={video_id}"
+        
+        # Return original if we can't parse it specifically, 
+        # but remove everything except the primary path and 'v' query
+        return url
+    except Exception:
+        return url
+
+
 @app.post("/download")
 async def create_download(request: DownloadRequest, background_tasks: BackgroundTasks):
     """
@@ -176,8 +208,9 @@ async def create_download(request: DownloadRequest, background_tasks: Background
     # Periodic cleanup on new requests
     background_tasks.add_task(cleanup_old_jobs)
     
-    url = request.url
-
+    # Sanitize the URL to handle radio/playlist edge cases
+    url = sanitize_youtube_url(request.url)
+    
     # Check if we already have a job for this URL
     if url in url_to_job_id:
         existing_id = url_to_job_id[url]
@@ -265,5 +298,6 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-
+    import sys
+    print(f"Starting server on Python {sys.version}")
     uvicorn.run(app, host="0.0.0.0", port=8000)

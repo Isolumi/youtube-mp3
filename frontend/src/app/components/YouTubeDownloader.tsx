@@ -37,6 +37,18 @@ export default function YouTubeDownloader() {
   const pollStatus = async (localId: string, jobId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/status/${jobId}`);
+      
+      // If the job is missing (404), stop polling to prevent infinite loops
+      if (response.status === 404) {
+        console.warn(`Job ${jobId} not found, stopping poll.`);
+        const interval = pollingIntervals.current.get(localId);
+        if (interval) {
+          clearInterval(interval);
+          pollingIntervals.current.delete(localId);
+        }
+        return;
+      }
+
       if (!response.ok) return;
 
       const data = await response.json();
