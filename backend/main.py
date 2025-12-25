@@ -1,4 +1,5 @@
 import uuid
+import os
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
@@ -8,9 +9,12 @@ import yt_dlp
 
 app = FastAPI(title="YouTube -> MP3")
 
+# Get allowed origins from environment variable (comma-separated)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
