@@ -1,6 +1,6 @@
 # YouTube to MP3 Converter API
 
-A simple FastAPI application that downloads YouTube videos and converts them to MP3 format.
+A simple FastAPI application that downloads YouTube videos and converts them to MP3 format using `yt-dlp` and `ffmpeg`.
 
 ## Prerequisites
 
@@ -20,26 +20,29 @@ sudo apt update && sudo apt install ffmpeg
 ```
 
 **Windows:**
-Download from [ffmpeg.org](https://ffmpeg.org/download.html)
+```bash
+# Using winget
+winget install ffmpeg
+```
 
 ## Quick Start with Docker (Recommended)
 
 The easiest way to run this application is using Docker Compose, which includes all dependencies:
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 The API will be available at `http://localhost:8000`
 
 To run in detached mode:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 To stop the service:
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Alternative: Docker without Compose
@@ -56,74 +59,79 @@ docker run -p 8000:8000 youtube-mp3
 
 ## Installation (Local Development)
 
-1. Install dependencies:
+This project uses `uv` for dependency management.
+
+1. Install [uv](https://github.com/astral-sh/uv)
+2. Sync dependencies:
 ```bash
-pip install -e .
+uv sync
 ```
 
 ## Usage (Local Development)
 
 1. Start the server:
 ```bash
-python main.py
+uv run python main.py
 ```
 
 Or using uvicorn directly:
 ```bash
-uvicorn main:app --reload
+uv run uvicorn main:app --reload
 ```
 
 2. The API will be available at `http://localhost:8000`
 
 ## CORS Configuration
 
-The API is pre-configured to allow requests from `http://localhost:3000` (Next.js default port).
+The API is configured to allow requests from `http://localhost:3000` by default. You can change this via the `ALLOWED_ORIGINS` environment variable.
 
-To add additional origins, update `main.py`:
-
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://yourdomain.com"  # Add your production domain
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+In `docker compose`:
+```yaml
+environment:
+  - ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
 ```
 
-## API Endpoint
+## API Endpoints
 
-### GET /download
+### POST /download
 
-Download YouTube video and convert to MP3. Returns the MP3 file when complete.
+Submit a YouTube video URL for downloading and conversion. Returns a `job_id` immediately.
 
-**Query Parameters:**
-- `url` (required): YouTube video URL
-
-**Example using curl:**
-```bash
-curl "http://localhost:8000/download?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ" \
-  --output audio.mp3
-```
-
-**Next.js Integration Example:**
-
-```typescript
-const handleDownload = (youtubeUrl: string) => {
-  const encodedUrl = encodeURIComponent(youtubeUrl);
-  window.location.href = `http://localhost:8000/download?url=${encodedUrl}`;
-};
+**Body:**
+```json
+{
+  "url": "https://www.youtube.com/watch?v=..."
+}
 ```
 
 **Response:**
-Returns the MP3 file with proper headers for browser download.
+```json
+{
+  "job_id": "uuid-v4-string",
+  "status": "pending"
+}
+```
+
+### GET /status/{job_id}
+
+Check the status and progress of a download job.
+
+**Response:**
+```json
+{
+  "job_id": "uuid-v4-string",
+  "status": "downloading",
+  "progress": 45.5
+}
+```
+
+### GET /result/{job_id}
+
+Download the completed MP3 file. Only works when status is `complete`.
 
 ### GET /
 
-Returns API information.
+Returns basic API information.
 
 ## Documentation
 
