@@ -1,13 +1,54 @@
 import uuid
 import os
 from pathlib import Path
+import shutil
+import time
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import yt_dlp
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="YouTube -> MP3")
+
+# Cleanup logic: remove files older than 1 hour
+def cleanup_old_jobs():
+    now = time.time()
+    to_delete = []
+    
+    # We'll use a copy to avoid modification during iteration
+    for jid, job in list(jobs.items()):
+        # Check if job was created more than 1 hour ago
+        if now - job.get("created_at", 0) > 3600:
+            to_delete.append(jid)
+    
+    for jid in to_delete:
+        try:
+            # Remove directory
+            job_dir = Path(f"/tmp/youtube_mp3/{jid}")
+            if job_dir.exists():
+                shutil.rmtree(job_dir)
+            
+            # Remove from URL mapping if it's the current one
+            url = jobs[jid].get("url")
+            if url and url_to_job_id.get(url) == jid:
+                del url_to_job_id[url]
+            
+            # Remove from jobs dict
+            del jobs[jid]
+            print(f"[{jid}] Cleaned up expired job files")
+        except Exception as e:
+            print(f"[{jid}] Error during cleanup: {e}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: could do something here if needed
+    yield
+    # Shutdown: could do cleanup here
+    cleanup_old_jobs()
+
+app = FastAPI(title="YouTube -> MP3", lifespan=lifespan)
 
 # Get allowed origins from environment variable (comma-separated)
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
@@ -22,6 +63,8 @@ app.add_middleware(
 
 # In-memory job storage
 jobs: dict[str, dict] = {}
+# Map URL to active or completed job_id to prevent redundant downloads
+url_to_job_id: dict[str, str] = {}
 
 
 class DownloadRequest(BaseModel):
@@ -33,8 +76,10 @@ def process_download(job_id: str, url: str):
     print(f"[{job_id}] Starting download for: {url}")
     jobs[job_id]["status"] = "downloading"
     jobs[job_id]["progress"] = 0
+    last_reported_progress = -5.0  # Force first progress report
 
     def progress_hook(d):
+        nonlocal last_reported_progress
         if d['status'] == 'downloading':
             try:
                 # Calculate progress percentage
@@ -48,7 +93,11 @@ def process_download(job_id: str, url: str):
                     progress = float(percent_str) if percent_str else 0
 
                 jobs[job_id]["progress"] = min(progress, 99)  # Cap at 99% until conversion
-                print(f"[{job_id}] Progress: {jobs[job_id]['progress']:.1f}%")
+                
+                # Only log every 10% to reduce verbosity
+                if progress >= last_reported_progress + 10:
+                    print(f"[{job_id}] Progress: {jobs[job_id]['progress']:.1f}%")
+                    last_reported_progress = progress
             except:
                 pass
         elif d['status'] == 'finished':
@@ -74,6 +123,7 @@ def process_download(job_id: str, url: str):
             "progress_hooks": [progress_hook],
             "quiet": True,
             "no_warnings": True,
+            "noprogress": True,  # Suppress yt-dlp's own progress bar
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -85,16 +135,11 @@ def process_download(job_id: str, url: str):
             title = info.get("title", "Unknown Title")
             author = info.get("uploader", info.get("channel", "Unknown Author"))
 
-            print(f"[{job_id}] Video: {title} by {author}")
-            print(f"[{job_id}] Expected MP3 file: {mp3_file}")
-            print(f"[{job_id}] Download dir contents: {list(download_dir.glob('*'))}")
-
             if not mp3_file.exists():
                 # Try to find any mp3 files in the directory
                 mp3_files = list(download_dir.glob("*.mp3"))
                 if mp3_files:
                     mp3_file = mp3_files[0]
-                    print(f"[{job_id}] Found MP3 at: {mp3_file}")
                 else:
                     jobs[job_id]["status"] = "error"
                     jobs[job_id]["error"] = "Failed to convert to MP3"
@@ -106,32 +151,53 @@ def process_download(job_id: str, url: str):
             jobs[job_id]["file_path"] = str(mp3_file)
             jobs[job_id]["title"] = title
             jobs[job_id]["author"] = author
-            print(f"[{job_id}] Complete: {title} by {author}")
+            print(f"[{job_id}] Complete: {title}")
 
     except yt_dlp.utils.DownloadError as e:
         jobs[job_id]["status"] = "error"
         jobs[job_id]["error"] = f"Download failed: {str(e)}"
         print(f"[{job_id}] yt-dlp error: {str(e)}")
+        # Remove from mapping if it failed so user can try again
+        if url in url_to_job_id and url_to_job_id[url] == job_id:
+            del url_to_job_id[url]
     except Exception as e:
         jobs[job_id]["status"] = "error"
         jobs[job_id]["error"] = f"An error occurred: {str(e)}"
         print(f"[{job_id}] Unexpected error: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        if url in url_to_job_id and url_to_job_id[url] == job_id:
+            del url_to_job_id[url]
 
 
 @app.post("/download")
 async def create_download(request: DownloadRequest, background_tasks: BackgroundTasks):
     """
-    Submit a download job. Returns job_id immediately.
+    Submit a download job. Returns existing job_id if already processing.
     """
+    # Periodic cleanup on new requests
+    background_tasks.add_task(cleanup_old_jobs)
+    
+    url = request.url
+
+    # Check if we already have a job for this URL
+    if url in url_to_job_id:
+        existing_id = url_to_job_id[url]
+        if existing_id in jobs:
+            # If it's not an error, reuse it
+            if jobs[existing_id]["status"] != "error":
+                return {"job_id": existing_id, "status": jobs[existing_id]["status"]}
+            else:
+                # If the previous one errored, let them try again
+                del url_to_job_id[url]
+
     job_id = str(uuid.uuid4())
     jobs[job_id] = {
         "status": "pending",
-        "url": request.url,
+        "url": url,
+        "created_at": time.time(),
     }
+    url_to_job_id[url] = job_id
 
-    background_tasks.add_task(process_download, job_id, request.url)
+    background_tasks.add_task(process_download, job_id, url)
 
     return {"job_id": job_id, "status": "pending"}
 

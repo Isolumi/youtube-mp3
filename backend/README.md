@@ -57,6 +57,27 @@ docker build -t youtube-mp3 .
 docker run -p 8000:8000 youtube-mp3
 ```
 
+## Cloudflare Tunnel Setup (Optional)
+
+To expose your backend securely without opening ports, you can use Cloudflare Tunnel:
+
+1. Create a tunnel in the [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com/).
+2. Choose "Docker" as the environment.
+3. Copy the **Tunnel Token**.
+4. Create a `.env` file in the `backend/` directory:
+   ```env
+   TUNNEL_TOKEN=your_token_here
+   ALLOWED_ORIGINS=https://your-frontend-domain.com
+   ```
+5. In your Cloudflare Tunnel configuration on the dashboard, add a Public Hostname:
+   - **Service:** `http://api:8000` (within the Docker network)
+   - **Hostname:** `api.yourdomain.com`
+
+6. Restart with the tunnel:
+   ```bash
+   docker compose up -d
+   ```
+
 ## Installation (Local Development)
 
 This project uses `uv` for dependency management.
