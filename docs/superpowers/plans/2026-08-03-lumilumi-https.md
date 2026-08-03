@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Serve `yootoob.dumachine.lumilumi.xyz` over publicly trusted HTTPS while keeping the service private through Tailscale.
+**Goal:** Serve `yootoob.doh.lumilumi.xyz` over publicly trusted HTTPS while keeping the service private through Tailscale.
 
 **Architecture:** cert-manager will use Let’s Encrypt DNS-01 validation through Cloudflare. Private DNS will resolve the hostname to dumachine’s Tailscale IP, while Cloudflare is used only to prove domain ownership and create temporary ACME TXT records. Traefik will route both the existing `.dumachine` alias and the new `.lumilumi.xyz` hostname to the same app.
 
@@ -44,7 +44,7 @@
 - Create: `k8s/overlays/dumachine/certificate.yml`
 - Modify: `k8s/overlays/dumachine/kustomization.yml`
 
-- [ ] Request a certificate for `yootoob.dumachine.lumilumi.xyz`.
+- [ ] Request a certificate for `yootoob.doh.lumilumi.xyz`.
 - [ ] Store it as the namespace-local Secret `yootoob-lumilumi-tls`.
 - [ ] Verify the certificate reports `READY=True` and contains the exact hostname.
 
@@ -54,15 +54,14 @@
 - Modify: `k8s/overlays/dumachine/patch-ingress.yml`
 - Modify: `k8s/overlays/dumachine/kustomization.yml`
 
-- [ ] Add `yootoob.dumachine.lumilumi.xyz` as a second Ingress host.
+- [ ] Add `yootoob.doh.lumilumi.xyz` as a second Ingress host.
 - [ ] Bind the Let’s Encrypt Secret to that host.
 - [ ] Keep `yootoob.dumachine` available as the private-CA/HTTP alias until we decide whether to remove it.
 - [ ] Redirect HTTP to HTTPS for the trusted hostname.
 
 ### Task 5: Configure private DNS and verify
 
-- [ ] Add `yootoob.dumachine.lumilumi.xyz` to dumachine’s private DNS mapping so it resolves to `100.121.114.49` through Tailscale.
-- [ ] Configure Tailscale DNS to route the `dumachine.lumilumi.xyz` suffix to dumachine’s DNS service.
-- [ ] Verify `https://yootoob.dumachine.lumilumi.xyz` has a trusted certificate, loads the app, and supports Google OAuth redirect URIs.
+- [ ] Add `yootoob.doh.lumilumi.xyz` to dumachine’s private DNS mapping so it resolves to `100.121.114.49` through Tailscale.
+- [ ] Configure Tailscale DNS to route the `doh.lumilumi.xyz` suffix to dumachine’s DNS service.
+- [ ] Verify `https://yootoob.doh.lumilumi.xyz` has a trusted certificate, loads the app, and supports Google OAuth redirect URIs.
 - [ ] Verify Argo CD is `Synced` and `Healthy` and no public service record was created.
-
