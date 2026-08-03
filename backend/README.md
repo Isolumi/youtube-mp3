@@ -35,6 +35,8 @@ docker compose up
 
 The API will be available at `http://localhost:8000`
 
+The production image is built from `backend/Dockerfile` and published as `ghcr.io/isolumi/youtube-mp3-api` by the repository workflow.
+
 To run in detached mode:
 ```bash
 docker compose up -d

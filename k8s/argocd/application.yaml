@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: youtube-mp3
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Isolumi/youtube-mp3.git
+    targetRevision: development
+    path: k8s/overlays/starmoon
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: youtube-mp3
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

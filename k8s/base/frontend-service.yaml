@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: youtube-mp3-frontend
+  labels:
+    app.kubernetes.io/name: youtube-mp3-frontend
+    app.kubernetes.io/part-of: youtube-mp3
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: youtube-mp3-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -1,80 +1,66 @@
-# Deployment
+# k3 + Argo CD deployment
 
-The application has two simple pieces:
+The cluster runs two images:
 
 ```text
-Browser → Cloudflare Pages (React/Vite static files)
-       → Cloudflare Tunnel → FastAPI Docker container
+Ingress → youtube-mp3-frontend (Nginx + React/Vite)
+                    │ /api proxy
+                    ▼
+          youtube-mp3-api (FastAPI + yt-dlp + FFmpeg)
 ```
 
-## Backend
+The Kubernetes manifests are in `k8s/`. The `starmoon` overlay is the Argo CD target.
 
-From `backend/`, start the API container:
+## One-time cluster setup
+
+The images are published to GHCR by GitHub Actions. If the packages are private, create the pull secret in the target namespace:
 
 ```bash
-ALLOWED_ORIGINS="https://your-frontend.pages.dev" docker compose up -d --build
+kubectl create namespace youtube-mp3
+kubectl -n youtube-mp3 create secret docker-registry ghcr-pull \
+  --docker-server=ghcr.io \
+  --docker-username=YOUR_GITHUB_USERNAME \
+  --docker-password=YOUR_GITHUB_PAT
 ```
 
-The API listens on `http://localhost:8000`. Check it with:
+The PAT needs package read access. If the GHCR packages are public, the secret is not needed; remove the `imagePullSecrets` entries from the two base Deployments.
+
+Replace `youtube-mp3.example.com` in `k8s/overlays/starmoon/patch-ingress.yaml` and the API `ALLOWED_ORIGINS` value with the real hostname.
+
+## Argo CD
+
+Apply the Argo Application once:
 
 ```bash
-curl http://localhost:8000/
-docker compose logs -f api
+kubectl apply -f k8s/argocd/application.yaml
 ```
 
-The backend needs Docker, FFmpeg (included in the image), and a Cloudflare Tunnel only if it must be reachable outside the local machine.
+Argo CD will then track `development`, create the `youtube-mp3` namespace, and sync `k8s/overlays/starmoon`.
 
-## Cloudflare Tunnel
+## Image flow
 
-Create a tunnel once, then point its hostname at the local API:
+Every push to `development` does the following:
+
+1. Builds and pushes both images to GHCR.
+2. Tags them with the commit SHA and `development`.
+3. Updates the Kustomize overlay to the commit SHA.
+4. Pushes that GitOps commit.
+5. Argo CD detects the manifest change and syncs the cluster.
+
+The workflow requires repository Actions permissions to write packages and contents. The checked-in workflow already requests both permissions.
+
+## Local manifest checks
 
 ```bash
-cloudflared tunnel login
-cloudflared tunnel create youtube-mp3-api
-cloudflared tunnel route dns youtube-mp3-api api.yourdomain.com
+kubectl kustomize k8s/overlays/starmoon
+kubectl apply --dry-run=client -k k8s/overlays/starmoon
 ```
 
-Create `~/.cloudflared/config.yml`:
-
-```yaml
-tunnel: <TUNNEL-ID>
-credentials-file: /Users/isolumi/.cloudflared/<TUNNEL-ID>.json
-
-ingress:
-  - hostname: api.yourdomain.com
-    service: http://localhost:8000
-  - service: http_status:404
-```
-
-Run it with:
+## Local Docker checks
 
 ```bash
-cloudflared tunnel run youtube-mp3-api
+docker build -t youtube-mp3-api:test ./backend
+docker build -t youtube-mp3-frontend:test ./frontend
 ```
 
-## Frontend
-
-From `frontend/`, build the static site with the public API URL:
-
-```bash
-VITE_API_URL=https://api.yourdomain.com bun install
-VITE_API_URL=https://api.yourdomain.com bun run build
-```
-
-Deploy `frontend/dist/` to Cloudflare Pages. For a Git-connected Pages project, use:
-
-- Build command: `bun run build`
-- Build directory: `frontend`
-- Output directory: `dist`
-- Environment variable: `VITE_API_URL=https://api.yourdomain.com`
-
-## Updating
-
-```bash
-cd backend
-docker compose up -d --build
-
-cd ../frontend
-bun install
-VITE_API_URL=https://api.yourdomain.com bun run build
-```
+The API stores active jobs and MP3 files in pod-local temporary storage. This is intentional for personal use; restarting the API pod discards its current jobs and files.
