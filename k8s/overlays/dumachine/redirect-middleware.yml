@@ -1,0 +1,18 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: yootoob-dumachine-redirect
+spec:
+  redirectRegex:
+    regex: ^http://([^./]+)\.dumachine(.*)$
+    replacement: https://${1}.dumachine.lumilumi.xyz${2}
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: yootoob-https-redirect
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

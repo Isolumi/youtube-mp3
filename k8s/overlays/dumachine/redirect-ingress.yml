@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yootoob-mp3-dumachine-redirect
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: yootoob-mp3-yootoob-dumachine-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: yootoob.dumachine
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yootoob-mp3-frontend
+                port:
+                  name: http

@@ -1,3 +1,13 @@
 - op: replace
   path: /spec/rules/0/host
-  value: yootoob.dumachine
+  value: yootoob.dumachine.lumilumi.xyz
+- op: add
+  path: /metadata/annotations
+  value:
+    traefik.ingress.kubernetes.io/router.middlewares: yootoob-mp3-yootoob-https-redirect@kubernetescrd
+- op: add
+  path: /spec/tls
+  value:
+    - hosts:
+        - yootoob.dumachine.lumilumi.xyz
+      secretName: yootoob-lumilumi-tls
