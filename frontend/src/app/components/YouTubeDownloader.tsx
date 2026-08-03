@@ -16,12 +16,12 @@ interface Job {
   error: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function YouTubeDownloader() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [jobs, setJobs] = useState<Job[]>([]);
-  const pollingIntervals = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const pollingIntervals = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
   useEffect(() => {
     return () => {
@@ -140,7 +140,7 @@ export default function YouTubeDownloader() {
       }, 2000);
 
       pollingIntervals.current.set(localId, interval);
-    } catch (error) {
+    } catch {
       setJobs((prev) =>
         prev.map((job) =>
           job.id === localId
