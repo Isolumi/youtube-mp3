@@ -458,7 +458,7 @@ wheels = [
 ]
 
 [[package]]
-name = "youtube-mp3"
+name = "yootoob-mp3"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

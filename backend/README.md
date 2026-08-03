@@ -35,7 +35,7 @@ docker compose up
 
 The API will be available at `http://localhost:8000`
 
-The production image is built from `backend/Dockerfile` and published as `ghcr.io/isolumi/youtube-mp3-api` by the repository workflow.
+The production image is built from `backend/Dockerfile` and published as `ghcr.io/isolumi/yootoob-mp3-api` by the repository workflow.
 
 To run in detached mode:
 ```bash
@@ -51,12 +51,12 @@ docker compose down
 
 1. Build the Docker image:
 ```bash
-docker build -t youtube-mp3 .
+docker build -t yootoob-mp3 .
 ```
 
 2. Run the container:
 ```bash
-docker run -p 8000:8000 youtube-mp3
+docker run -p 8000:8000 yootoob-mp3
 ```
 
 ## Cloudflare Tunnel (Optional)

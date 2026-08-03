@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "youtube-mp3-nextjs",
+      "name": "yootoob-mp3-nextjs",
       "dependencies": {
         "react": "19.2.0",
         "react-dom": "19.2.0",

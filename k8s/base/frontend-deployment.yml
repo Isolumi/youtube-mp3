@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: youtube-mp3-frontend
+  name: yootoob-mp3-frontend
   labels:
-    app.kubernetes.io/name: youtube-mp3-frontend
-    app.kubernetes.io/part-of: youtube-mp3
+    app.kubernetes.io/name: yootoob-mp3-frontend
+    app.kubernetes.io/part-of: yootoob-mp3
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: youtube-mp3-frontend
+      app.kubernetes.io/name: yootoob-mp3-frontend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: youtube-mp3-frontend
-        app.kubernetes.io/part-of: youtube-mp3
+        app.kubernetes.io/name: yootoob-mp3-frontend
+        app.kubernetes.io/part-of: yootoob-mp3
     spec:
       imagePullSecrets:
         - name: ghcr-pull
       containers:
         - name: frontend
-          image: ghcr.io/isolumi/youtube-mp3-frontend:development
+          image: ghcr.io/isolumi/yootoob-mp3-frontend:development
           imagePullPolicy: Always
           ports:
             - name: http

@@ -27,4 +27,4 @@ bun run build
 
 Upload the generated `dist/` directory to Cloudflare Pages or another static host. Set `VITE_API_URL` to the public backend URL before building.
 
-For Kubernetes, `frontend/Dockerfile` packages the build with Nginx. The container serves the UI and proxies `/api` to the in-cluster `youtube-mp3-api` Service, so the browser only needs one public hostname.
+For Kubernetes, `frontend/Dockerfile` packages the build with Nginx. The container serves the UI and proxies `/api` to the in-cluster `yootoob-mp3-api` Service, so the browser only needs one public hostname.

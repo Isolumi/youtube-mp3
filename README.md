@@ -3,21 +3,21 @@
 The cluster runs two images:
 
 ```text
-Ingress → youtube-mp3-frontend (Nginx + React/Vite)
+Ingress → yootoob-mp3-frontend (Nginx + React/Vite)
                     │ /api proxy
                     ▼
-          youtube-mp3-api (FastAPI + yt-dlp + FFmpeg)
+          yootoob-mp3-api (FastAPI + yt-dlp + FFmpeg)
 ```
 
-The Kubernetes manifests are in `k8s/`. The `starmoon` overlay is the Argo CD target.
+The Kubernetes manifests are in `k8s/`. The `dumachine` overlay is the Argo CD target.
 
 ## One-time cluster setup
 
 The images are published to GHCR by GitHub Actions. If the packages are private, create the pull secret in the target namespace:
 
 ```bash
-kubectl create namespace youtube-mp3
-kubectl -n youtube-mp3 create secret docker-registry ghcr-pull \
+kubectl create namespace yootoob-mp3
+kubectl -n yootoob-mp3 create secret docker-registry ghcr-pull \
   --docker-server=ghcr.io \
   --docker-username=YOUR_GITHUB_USERNAME \
   --docker-password=YOUR_GITHUB_PAT
@@ -25,17 +25,17 @@ kubectl -n youtube-mp3 create secret docker-registry ghcr-pull \
 
 The PAT needs package read access. If the GHCR packages are public, the secret is not needed; remove the `imagePullSecrets` entries from the two base Deployments.
 
-Replace `youtube-mp3.example.com` in `k8s/overlays/starmoon/patch-ingress.yaml` and the API `ALLOWED_ORIGINS` value with the real hostname.
+The dumachine deployment uses `yootoob.dumachine` as its private hostname.
 
 ## Argo CD
 
 Apply the Argo Application once:
 
 ```bash
-kubectl apply -f k8s/argocd/application.yaml
+kubectl apply -f k8s/argocd/application.yml
 ```
 
-Argo CD will then track `development`, create the `youtube-mp3` namespace, and sync `k8s/overlays/starmoon`.
+Argo CD will then track `development`, create the `yootoob-mp3` namespace, and sync `k8s/overlays/dumachine`.
 
 ## Image flow
 
@@ -52,15 +52,15 @@ The workflow requires repository Actions permissions to write packages and conte
 ## Local manifest checks
 
 ```bash
-kubectl kustomize k8s/overlays/starmoon
-kubectl apply --dry-run=client -k k8s/overlays/starmoon
+kubectl kustomize k8s/overlays/dumachine
+kubectl apply --dry-run=client -k k8s/overlays/dumachine
 ```
 
 ## Local Docker checks
 
 ```bash
-docker build -t youtube-mp3-api:test ./backend
-docker build -t youtube-mp3-frontend:test ./frontend
+docker build -t yootoob-mp3-api:test ./backend
+docker build -t yootoob-mp3-frontend:test ./frontend
 ```
 
 The API stores active jobs and MP3 files in pod-local temporary storage. This is intentional for personal use; restarting the API pod discards its current jobs and files.

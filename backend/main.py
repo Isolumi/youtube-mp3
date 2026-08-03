@@ -26,7 +26,7 @@ def cleanup_old_jobs():
     for jid in to_delete:
         try:
             # Remove directory
-            job_dir = Path(f"/tmp/youtube_mp3/{jid}")
+            job_dir = Path(f"/tmp/yootoob_mp3/{jid}")
             if job_dir.exists():
                 shutil.rmtree(job_dir)
             
@@ -107,7 +107,7 @@ def process_download(job_id: str, url: str):
             print(f"[{job_id}] Download finished, converting to MP3...")
 
     try:
-        download_dir = Path(f"/tmp/youtube_mp3/{job_id}")
+        download_dir = Path(f"/tmp/yootoob_mp3/{job_id}")
         download_dir.mkdir(parents=True, exist_ok=True)
         output_path = download_dir / "%(title)s.%(ext)s"
 
