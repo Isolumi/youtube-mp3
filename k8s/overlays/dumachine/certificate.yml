@@ -8,4 +8,4 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-    - yootoob.dumachine.lumilumi.xyz
+    - yootoob.doh.lumilumi.xyz

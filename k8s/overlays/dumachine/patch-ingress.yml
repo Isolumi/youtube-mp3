@@ -1,6 +1,6 @@
 - op: replace
   path: /spec/rules/0/host
-  value: yootoob.dumachine.lumilumi.xyz
+  value: yootoob.doh.lumilumi.xyz
 - op: add
   path: /metadata/annotations
   value:
@@ -9,5 +9,5 @@
   path: /spec/tls
   value:
     - hosts:
-        - yootoob.dumachine.lumilumi.xyz
+        - yootoob.doh.lumilumi.xyz
       secretName: yootoob-lumilumi-tls
