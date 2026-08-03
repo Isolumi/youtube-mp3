@@ -18,6 +18,24 @@ interface Job {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
+const createLocalId = (): string => {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  return [...bytes]
+    .map((byte, index) => {
+      const value = byte.toString(16).padStart(2, '0');
+      return [4, 6, 8, 10].includes(index) ? `-${value}` : value;
+    })
+    .join('');
+};
+
 export default function YouTubeDownloader() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -95,7 +113,7 @@ export default function YouTubeDownloader() {
     if (!youtubeUrl.trim()) return;
     if (!isValidYouTubeUrl(youtubeUrl)) return;
 
-    const localId = crypto.randomUUID();
+    const localId = createLocalId();
     const newJob: Job = {
       id: localId,
       url: youtubeUrl,
