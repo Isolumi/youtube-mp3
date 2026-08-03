@@ -26,7 +26,7 @@ patches:
 images:
   - name: ghcr.io/isolumi/yootoob-mp3-api
     newName: ghcr.io/isolumi/yootoob-mp3-api
-    newTag: f0ef2bc5f6a2c5e8edea9ae273d398c6ce7cb646
+    newTag: 1829d6ba3b55e66a2134ae64161b9e48ad39a197
   - name: ghcr.io/isolumi/yootoob-mp3-frontend
     newName: ghcr.io/isolumi/yootoob-mp3-frontend
-    newTag: f0ef2bc5f6a2c5e8edea9ae273d398c6ce7cb646
+    newTag: 1829d6ba3b55e66a2134ae64161b9e48ad39a197
