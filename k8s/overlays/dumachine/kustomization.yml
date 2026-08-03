@@ -5,7 +5,7 @@ namespace: yootoob-mp3
 
 resources:
   - ../../base
-  - certificate-staging.yml
+  - certificate.yml
   - redirect-middleware.yml
   - redirect-ingress.yml
 
