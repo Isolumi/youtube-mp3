@@ -49,7 +49,7 @@
 - Delete: `frontend/src/app/components/YouTubeDownloader.tsx`
 - Modify: `frontend/tsconfig.json`
 - Modify: `frontend/README.md`
-- Modify: `DEPLOYMENT.md`
+- Modify: `README.md`
 
 **Interfaces:**
 - The frontend build output is `frontend/dist`.

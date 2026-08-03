@@ -58,7 +58,7 @@
 ### Task 4: Document and verify deployment
 
 **Files:**
-- Modify: `DEPLOYMENT.md`
+- Modify: `README.md`
 - Modify: `backend/README.md`
 - Modify: `frontend/README.md`
 

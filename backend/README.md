@@ -61,7 +61,7 @@ docker run -p 8000:8000 youtube-mp3
 
 ## Cloudflare Tunnel (Optional)
 
-Run Cloudflare Tunnel separately on the host and point it at `http://localhost:8000`. See the root [deployment guide](../DEPLOYMENT.md).
+Run Cloudflare Tunnel separately on the host and point it at `http://localhost:8000`. See the root [README](../README.md).
 
 ## Installation (Local Development)
 
