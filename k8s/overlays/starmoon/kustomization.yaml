@@ -17,7 +17,7 @@ patches:
 images:
   - name: ghcr.io/isolumi/youtube-mp3-api
     newName: ghcr.io/isolumi/youtube-mp3-api
-    newTag: 9e3316e62588dde187ba1190370136d33c190a29
+    newTag: 9c5bfbf80133dd76b3114ffb286907b28b3eba03
   - name: ghcr.io/isolumi/youtube-mp3-frontend
     newName: ghcr.io/isolumi/youtube-mp3-frontend
-    newTag: 9e3316e62588dde187ba1190370136d33c190a29
+    newTag: 9c5bfbf80133dd76b3114ffb286907b28b3eba03
