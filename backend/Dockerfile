@@ -18,6 +18,9 @@ COPY pyproject.toml uv.lock ./
 # --frozen ensures we use the exact versions in uv.lock
 RUN uv sync --frozen --no-dev
 
+# Enforce the minimum yt-dlp release that contains the YouTube download fix.
+RUN uv run python -c "import yt_dlp; assert tuple(map(int, yt_dlp.version.__version__.split('.'))) >= (2026, 8, 19), yt_dlp.version.__version__"
+
 # Copy application code
 COPY main.py .
 
